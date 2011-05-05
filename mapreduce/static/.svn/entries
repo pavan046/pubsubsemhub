@@ -1,0 +1,63 @@
+10
+
+dir
+0
+http://knoesis-svn.cs.wright.edu/svn/pavan/pubsubhubbub/trunk/pshb-example/pubsubhubbub/hub/mapreduce/static
+http://knoesis-svn.cs.wright.edu/svn/pavan
+add
+
+
+
+
+
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+8661c0b3-8f0a-4391-bfa0-cfeaea3dbe21
+
+base.css
+file
+
+
+
+add
+
+detail.html
+file
+
+
+
+add
+
+jquery-1.4.2.min.js
+file
+
+
+
+add
+
+overview.html
+file
+
+
+
+add
+
+status.js
+file
+
+
+
+add
+

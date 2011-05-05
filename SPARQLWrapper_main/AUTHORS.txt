@@ -1,0 +1,18 @@
+
+Authors
+-------
+                   
+    Ivan Herman <ivan@w3.org>   
+    Sergio Fernández <sergio.fernandez@fundacionctic.org>
+    Carlos Tejo <carlos.tejo@fundacionctic.org>
+
+
+Contributors
+------------
+
+    Obey Arthur Liu <arthur@milliways.fr>
+    Christopher Lenz <cmlenz@gmx.de> www.cmlenz.net - Feature to allow developers to choose the json module
+    Pēteris Caune <cuu508@gmail.com> - Great feedback and patches
+    Bogdan Benea <bugdone@users.sourceforge.net> - Patch for regular expresion
+    William Waites <ww@styx.org> and Christoph Burgmer <cburgmer@users.sourceforge.net> - Patches for RDFLib3
+

@@ -1,0 +1,168 @@
+10
+
+dir
+0
+http://knoesis-svn.cs.wright.edu/svn/pavan/pubsubhubbub/trunk/pshb-example/pubsubhubbub/hub/feed_diff_testdata
+http://knoesis-svn.cs.wright.edu/svn/pavan
+add
+
+
+
+
+
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+8661c0b3-8f0a-4391-bfa0-cfeaea3dbe21
+
+atom_namespace.xml
+file
+
+
+
+add
+
+atom_no_id.xml
+file
+
+
+
+add
+
+attribute_escaping.xml
+file
+
+
+
+add
+
+bad_atom_feed.xml
+file
+
+
+
+add
+
+bad_feed.xml
+file
+
+
+
+add
+
+cdata_test.xml
+file
+
+
+
+add
+
+entity_escaping.xml
+file
+
+
+
+add
+
+missing_entry_id.xml
+file
+
+
+
+add
+
+no_xml_header.xml
+file
+
+
+
+add
+
+parsing.xml
+file
+
+
+
+add
+
+rdf_10_weirdness.xml
+file
+
+
+
+add
+
+rss2_only_link.xml
+file
+
+
+
+add
+
+rss2_only_title.xml
+file
+
+
+
+add
+
+rss2sample.xml
+file
+
+
+
+add
+
+rss_no_link.xml
+file
+
+
+
+add
+
+rss_rdf.xml
+file
+
+
+
+add
+
+sampleRss091.xml
+file
+
+
+
+add
+
+sampleRss092.xml
+file
+
+
+
+add
+
+whitespace_id.xml
+file
+
+
+
+add
+
+xhtml_entities.xml
+file
+
+
+
+add
+
