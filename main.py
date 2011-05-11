@@ -2403,8 +2403,8 @@ def find_feed_updates(topic, format, feed_content,
   entry_payloads = []
   #SMOB: Start code to get the updated entry restrictions
   '''SMOB: I maintain the Map rather than an array since the posts should be accessed using the id
-          when the subscriptions are to be sent'''
-  entry_restrictions = {}
+          when the subscriptions are to be sent.'''
+  entry_restrictions = []
   #SMOB: End code
   for entry_id, new_content in entries_map.iteritems():
     new_content_hash = sha1_hash(new_content)
@@ -2421,7 +2421,7 @@ def find_feed_updates(topic, format, feed_content,
     logging.debug('content: %r', new_content)
     entry_payloads.append(new_content)
     #SMOB: Start code to get the updated entry restrictions
-    entry_restrictions[entry_id] = restrictions_map[entry_id]
+    entry_restrictions.append(restrictions_map[entry_id])
     #SMOB: End code
     entities_to_save.append(FeedEntryRecord.create_entry_for_topic(
         topic, entry_id, new_content_hash))
