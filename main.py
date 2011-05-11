@@ -1448,7 +1448,12 @@ class EventToDeliver(db.Expando):
   totally_failed = db.BooleanProperty(default=False)
   content_type = db.TextProperty(default='')
   max_failures = db.IntegerProperty(indexed=False)
-
+  
+  #SMOB: Start code Add a parameter for the list of queries
+  access_restrictions = []
+  #SMOB: End code
+  #SMOB: Start code to add the entry_restrictions as a paremeter
+        #to the below method
   @classmethod
   def create_event_for_topic(cls,
                              topic,
@@ -1456,9 +1461,11 @@ class EventToDeliver(db.Expando):
                              content_type,
                              header_footer,
                              entry_payloads,
+                             entry_restrictions,
                              now=datetime.datetime.utcnow,
                              set_parent=True,
                              max_failures=None):
+    #SMOB: End code
     """Creates an event to deliver for a topic and set of published entries.
 
     Args:
@@ -1472,6 +1479,10 @@ class EventToDeliver(db.Expando):
       entry_payloads: List of strings containing entry payloads (i.e., all
         XML data for each entry, including surrounding tags) in order of newest
         to oldest.
+      SMOB: Start code
+      entry_restrictions: List of the sparql queries which has to be executed to 
+        get the list of subscribers who should receive the post.
+      SMOB: End code
       now: Returns the current time as a UTC datetime. Used in tests.
       set_parent: Set the parent to the FeedRecord for the given topic. This is
         necessary for the parse_feed flow's transaction. Default is True. Set
@@ -1518,15 +1529,18 @@ class EventToDeliver(db.Expando):
 
     if isinstance(payload, unicode):
       payload = payload.encode('utf-8')
-
+    
+    #SMOB: Start code to add the access_restrictions for the event
     return cls(
         parent=parent,
         topic=topic,
         topic_hash=sha1_hash(topic),
         payload=db.Blob(payload),
+        access_restrictions=entry_restrictions,
         last_modified=now(),
         content_type=content_type,
         max_failures=max_failures)
+    #SMOB: End code
 
   def get_next_subscribers(self, chunk_size=None):
     """Retrieve the next set of subscribers to attempt delivery for this event.
@@ -1543,6 +1557,8 @@ class EventToDeliver(db.Expando):
         subscription_list: List of Subscription entities to attempt to contact
           for this event.
     """
+    #SMOB: This is the place to change code for getting the sparql queries
+    logging.info('Restriction: %r', self.access_restrictions)
     if chunk_size is None:
       chunk_size = EVENT_SUBSCRIBER_CHUNK_SIZE
 
@@ -2363,9 +2379,11 @@ def find_feed_updates(topic, format, feed_content,
   """
   if format == ARBITRARY:
     return (feed_content, [], [])
-
-  header_footer, entries_map = filter_feed(feed_content, format)
-
+  #SMOB: Collect the latest content changed so that the SPARQL Queries can be checked
+  '''header_footer, entries_map = filter_feed(feed_content, format)'''
+  #SMOB: Start code
+  header_footer, entries_map, restrictions_map = filter_feed(feed_content, format)
+  #SMOB: End code
   # Find the new entries we've never seen before, and any entries that we
   # knew about that have been updated.
   STEP = MAX_FEED_ENTRY_RECORD_LOOKUPS
@@ -2378,11 +2396,16 @@ def find_feed_updates(topic, format, feed_content,
 
   existing_dict = dict((e.id_hash, e.entry_content_hash)
                        for e in existing_entries if e)
-  logging.debug('Retrieved %d feed entries, %d of which have been seen before',
+  logging.info('Retrieved %d feed entries, %d of which have been seen before',
                 len(entries_map), len(existing_dict))
 
   entities_to_save = []
   entry_payloads = []
+  #SMOB: Start code to get the updated entry restrictions
+  '''SMOB: I maintain the Map rather than an array since the posts should be accessed using the id
+          when the subscriptions are to be sent'''
+  entry_restrictions = {}
+  #SMOB: End code
   for entry_id, new_content in entries_map.iteritems():
     new_content_hash = sha1_hash(new_content)
     new_entry_id_hash = sha1_hash(entry_id)
@@ -2393,12 +2416,17 @@ def find_feed_updates(topic, format, feed_content,
         continue
     except KeyError:
       pass
-
+    #SMOB: Logging (Possibly here get another array for the sparql queries)
+    logging.debug('Entry-Id: %r', entry_id)
+    logging.debug('content: %r', new_content)
     entry_payloads.append(new_content)
+    #SMOB: Start code to get the updated entry restrictions
+    entry_restrictions[entry_id] = restrictions_map[entry_id]
+    #SMOB: End code
     entities_to_save.append(FeedEntryRecord.create_entry_for_topic(
         topic, entry_id, new_content_hash))
 
-  return header_footer, entities_to_save, entry_payloads
+  return header_footer, entities_to_save, entry_payloads, entry_restrictions
 
 
 def pull_feed(feed_to_fetch, fetch_url, headers):
@@ -2473,6 +2501,20 @@ def inform_event(event_to_deliver, alternate_topics):
   """
   pass
 
+#SMOB: Start code to extract the queries from the content 
+def extract_restrictions(feed_content, format):
+  """Extracts the sparql queries for each of the entry_id and pushes it into the MAP.
+
+  
+  Args:
+    feed_content:  Content of the feed from which the queries are extracted
+    format: format of the content rss/atom
+  Returns: The queries in the content is extracted and the returned without the queries  
+  """
+  content = feed_content.replace('pavan', '')
+  return content
+  
+#SMOB: End code
 
 def parse_feed(feed_record,
                headers,
@@ -2509,13 +2551,21 @@ def parse_feed(feed_record,
     order = (RSS, ATOM, ARBITRARY)
   else:
     order = (ATOM, RSS, ARBITRARY)
-
+  #SMOB: Start code to extract queries
+  content = extract_restrictions(content, 'atom')
+  #SMOB: End code
+        
   parse_failures = 0
   for format in order:
     # Parse the feed. If this fails we will give up immediately.
     try:
-      header_footer, entities_to_save, entry_payloads = find_feed_updates(
+      #SMOB: Start code, added the entry_restrictions which will contain the list of queries for each entry
+      '''header_footer, entities_to_save, entry_payloads = find_feed_updates(
+          feed_record.topic, format, content)'''
+      header_footer, entities_to_save, entry_payloads, entry_restrictions = find_feed_updates(
           feed_record.topic, format, content)
+      logging.info('Entry restrictions: %r', entry_restrictions)
+      #SMOB: End code
       break
     except (xml.sax.SAXException, feed_diff.Error), e:
       error_traceback = traceback.format_exc()
@@ -2560,10 +2610,18 @@ def parse_feed(feed_record,
         'format=%r, content_type=%r, header_footer_bytes=%d',
         len(entities_to_save), format, feed_record.content_type,
         len(header_footer))
+    #SMOB: Start code to send the entry_restrictions for the event
+    '''SMOB: TODO remove the SPARQL queries from the entry_payloads before
+            creating an event_to_deliver. The SPARQL queries should not 
+            reach the subscriber
     event_to_deliver = EventToDeliver.create_event_for_topic(
         feed_record.topic, format, feed_record.content_type,
-        header_footer, entry_payloads)
+        header_footer, entry_payloads )''' 
+    event_to_deliver = EventToDeliver.create_event_for_topic(
+        feed_record.topic, format, feed_record.content_type,
+        header_footer, entry_payloads, entry_restrictions)
     entities_to_save.insert(0, event_to_deliver)
+    #SMOB: End code
 
   entities_to_save.insert(0, feed_record)
 

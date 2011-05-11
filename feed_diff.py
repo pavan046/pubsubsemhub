@@ -54,7 +54,7 @@ class FeedContentHandler(xml.sax.handler.ContentHandler):
     self.parser = parser
     self.header_footer = ""
     self.entries_map = {}
-
+    self.entries_restrictions_map = {}
     # Internal state
     self.stack_level = 0
     self.output_stack = []
@@ -152,6 +152,8 @@ class AtomFeedHandler(FeedContentHandler):
   """Sax content handler for Atom feeds."""
 
   def handleEvent(self, event, content):
+    #SMOB: Logging to see content of each feed
+    logging.debug('content: %r', content)
     depth, tag = event[0], event[1].lower()
     if depth == 1:
       if tag != 'feed' and not tag.endswith(':feed'):
@@ -160,6 +162,11 @@ class AtomFeedHandler(FeedContentHandler):
         self.header_footer = strip_whitespace(event[1], self.pop())
     elif depth == 2 and (tag == 'entry' or tag.endswith(':entry')):
       self.entries_map[self.last_id] = ''.join(self.pop())
+      #SMOB: Start code, adding the SPARQL queries to each entry_id
+      '''SMOB: TODO the restrictions map should be extracted from the content and stored, here it is just 
+                for the protoype. This should again be done for the RssFeedHandler below'''
+      self.entries_restrictions_map[self.last_id] = ''.join('select ?s where {?s ?p ?o}')
+      #SMOB: End code
     elif depth == 3 and (tag == 'id' or tag.endswith(':id')):
       self.last_id = ''.join(content).strip()
       self.emit(self.pop())
@@ -184,6 +191,9 @@ class RssFeedHandler(FeedContentHandler):
       item_id = (self.last_id or self.last_link or
                  self.last_title or self.last_description)
       self.entries_map[item_id] = ''.join(self.pop())
+      #SMOB: Start code, adding the SPARQL queries to each entry_id
+      self.entries_restrictions_map[self.last_id] = ''.join('select ?s where {?s ?p ?o}')
+      #SMOB: End code
       self.last_id, self.last_link, self.last_title, self.last_description = (
           '', '', '', '')
     elif (tag == 'guid' or tag.endswith(':guid')) and (
@@ -251,8 +261,8 @@ def filter(data, format):
       raise Error('<entry> element missing <id>: %s' % content)
     elif format == 'rss' and not entry_id:
       raise Error('<item> element missing <guid> or <link>: %s' % content)
-
-  return handler.header_footer, handler.entries_map
-
+  #SMOB: Start code to return the entries_restrictions_map
+  return handler.header_footer, handler.entries_map, handler.entries_restrictions_map
+  #SMOB: End code
 
 __all__ = ['filter', 'DEBUG', 'Error']
