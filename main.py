@@ -1557,8 +1557,6 @@ class EventToDeliver(db.Expando):
         subscription_list: List of Subscription entities to attempt to contact
           for this event.
     """
-    #SMOB: This is the place to change code for getting the sparql queries
-    logging.info('Restriction: %r', self.access_restrictions)
     if chunk_size is None:
       chunk_size = EVENT_SUBSCRIBER_CHUNK_SIZE
 
@@ -1570,6 +1568,34 @@ class EventToDeliver(db.Expando):
       else:
         self.last_callback = ''
 
+      '''SMOB: The all_subscribers contain the subscribers object. Since we are working on RDF
+              we might have to refer the FOAF profiles using the callback URL. Once we get all the
+              call back urls we compare it with all_subscribers subscription objects to get the 
+              relevant one '''
+    
+      #SMOB: Start code to execute the SPARQL Queries and get the call back URLs
+      #variable to hold the call back URIs resulting from the sparql query 
+      callback_uris = []
+      #variable to hold the matched subscribers
+      revised_subscribers = []
+      for restriction in self.access_restrictions:
+        logging.debug('Restriction: %r', restriction)
+        #The object can be instantiated only once to connect and multiple inserts can be done
+        #SMOB: This is the place to change code for getting the sparql queries
+        connect=sparql_connect.VirtuosoConnect()
+        callback_uris = connect.select(restriction)
+        logging.debug('Callbacks from SPARQL: %r', callback_uris)
+      
+      for subscriber in all_subscribers:
+        for sparql_callback in callback_uris:
+          logging.info('sparql callback: %r', sparql_callback)
+          logging.info('subscriber callback: %r', subscriber.callback)
+          if str(subscriber.callback)==str(sparql_callback):
+              revised_subscribers.append(subscriber)
+      all_subscribers=revised_subscribers
+      logging.info('Number of subscribers: %r', len(all_subscribers))
+      #SMOB: End code
+        
       more_subscribers = len(all_subscribers) > chunk_size
       subscription_list = all_subscribers[:chunk_size]
     elif self.delivery_mode == EventToDeliver.RETRY:

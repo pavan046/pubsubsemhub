@@ -3,6 +3,7 @@
 import logging
 from SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF
 
+DEBUG = True
 
 """This class is built on the sparql wrapper which queries a sparql endpoint
    The returned results are then parsed based on the content type returned """
@@ -17,7 +18,10 @@ class VirtuosoConnect:
     def select(self, query):
     	sparql = SPARQLWrapper("http://localhost:8890/sparql")
     	sparql.setQuery(query)
-    	return sparql
+	logging.info('Query: %r', query)
+    	uris = self.returnJson(sparql)
+	logging.info('uris: %r', uris)
+	return uris
     	
     """This function takes in a insert statment and returns 
     whether it was executed fine or not"""

@@ -165,7 +165,7 @@ class AtomFeedHandler(FeedContentHandler):
       #SMOB: Start code, adding the SPARQL queries to each entry_id
       '''SMOB: TODO the restrictions map should be extracted from the content and stored, here it is just 
                 for the protoype. This should again be done for the RssFeedHandler below'''
-      self.entries_restrictions_map[self.last_id] = ''.join('select ?s where {?s ?p ?o}')
+      self.entries_restrictions_map[self.last_id] = ''.join("""PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT ?s FROM <http://localhost:8890/DAV/home/smob> WHERE { ?s ?p ?q }""")
       #SMOB: End code
     elif depth == 3 and (tag == 'id' or tag.endswith(':id')):
       self.last_id = ''.join(content).strip()
