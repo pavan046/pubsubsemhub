@@ -99,7 +99,10 @@ import urllib
 import urlparse
 import wsgiref.handlers
 import xml.sax
+#SMOB: Start import libraries
 import sparql_connect
+from BeautifulSoup import BeautifulStoneSoup
+#SMOB: End
 
 from google.appengine import runtime
 from google.appengine.api import datastore_types
@@ -1579,7 +1582,8 @@ class EventToDeliver(db.Expando):
       #variable to hold the matched subscribers
       revised_subscribers = []
       for restriction in self.access_restrictions:
-        logging.debug('Restriction: %r', restriction)
+        restriction = unicode(BeautifulStoneSoup(restriction, convertEntities=BeautifulStoneSoup.ALL_ENTITIES))
+        logging.info('Restriction: %r', restriction)
         #The object can be instantiated only once to connect and multiple inserts can be done
         #SMOB: This is the place to change code for getting the sparql queries
         connect=sparql_connect.VirtuosoConnect()
@@ -1588,8 +1592,8 @@ class EventToDeliver(db.Expando):
       
       for subscriber in all_subscribers:
         for sparql_callback in callback_uris:
-          logging.info('sparql callback: %r', sparql_callback)
-          logging.info('subscriber callback: %r', subscriber.callback)
+          logging.debug('sparql callback: %r', sparql_callback)
+          logging.debug('subscriber callback: %r', subscriber.callback)
           if str(subscriber.callback)==str(sparql_callback):
               revised_subscribers.append(subscriber)
       all_subscribers=revised_subscribers
@@ -2409,6 +2413,7 @@ def find_feed_updates(topic, format, feed_content,
   '''header_footer, entries_map = filter_feed(feed_content, format)'''
   #SMOB: Start code
   header_footer, entries_map, restrictions_map = filter_feed(feed_content, format)
+  restriction_keys = restrictions_map.keys()
   #SMOB: End code
   # Find the new entries we've never seen before, and any entries that we
   # knew about that have been updated.
@@ -2578,6 +2583,8 @@ def parse_feed(feed_record,
   else:
     order = (ATOM, RSS, ARBITRARY)
   #SMOB: Start code to extract queries
+  #TODO: This is not required because the restrictions are 
+  #      extracted at the time of finding the feed difference.
   content = extract_restrictions(content, 'atom')
   #SMOB: End code
         
@@ -2590,7 +2597,7 @@ def parse_feed(feed_record,
           feed_record.topic, format, content)'''
       header_footer, entities_to_save, entry_payloads, entry_restrictions = find_feed_updates(
           feed_record.topic, format, content)
-      logging.info('Entry restrictions: %r', entry_restrictions)
+      logging.debug('Entry restrictions: %r', entry_restrictions)
       #SMOB: End code
       break
     except (xml.sax.SAXException, feed_diff.Error), e:

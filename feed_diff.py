@@ -153,7 +153,7 @@ class AtomFeedHandler(FeedContentHandler):
 
   def handleEvent(self, event, content):
     #SMOB: Logging to see content of each feed
-    logging.debug('content: %r', content)
+    #logging.info('content: %r', content)
     depth, tag = event[0], event[1].lower()
     if depth == 1:
       if tag != 'feed' and not tag.endswith(':feed'):
@@ -163,13 +163,19 @@ class AtomFeedHandler(FeedContentHandler):
     elif depth == 2 and (tag == 'entry' or tag.endswith(':entry')):
       self.entries_map[self.last_id] = ''.join(self.pop())
       #SMOB: Start code, adding the SPARQL queries to each entry_id
-      '''SMOB: TODO the restrictions map should be extracted from the content and stored, here it is just 
-                for the protoype. This should again be done for the RssFeedHandler below'''
+      '''SMOB: TODO this is just for the prototype
+               and the working client of the Developers Guide. The
+               working one is in the final elif below.'''
       self.entries_restrictions_map[self.last_id] = ''.join("""PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT ?s FROM <http://localhost:8890/DAV/home/smob> WHERE { ?s ?p ?q }""")
       #SMOB: End code
     elif depth == 3 and (tag == 'id' or tag.endswith(':id')):
       self.last_id = ''.join(content).strip()
       self.emit(self.pop())
+    #SMOB: Start code, adding the SPARQL queries to each entry_id
+    elif depth == 3 and (tag == 'access' or tag.endswith(':access')):
+      self.entries_restrictions_map[self.last_id] = ''.join("""PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> SELECT ?s FROM <http://localhost:8890/DAV/home/smob> WHERE { ?s ?p ?q }""")
+      self.emit(self.pop())
+      #SMOB: End code
     else:
       self.emit(self.pop())
 
@@ -192,7 +198,7 @@ class RssFeedHandler(FeedContentHandler):
                  self.last_title or self.last_description)
       self.entries_map[item_id] = ''.join(self.pop())
       #SMOB: Start code, adding the SPARQL queries to each entry_id
-      self.entries_restrictions_map[self.last_id] = ''.join('select ?s where {?s ?p ?o}')
+      #self.entries_restrictions_map[item_id] = ''.join('select ?s where {?s ?p ?o}')
       #SMOB: End code
       self.last_id, self.last_link, self.last_title, self.last_description = (
           '', '', '', '')
@@ -212,6 +218,18 @@ class RssFeedHandler(FeedContentHandler):
         depth == 4 or (depth == 3 and 'rdf' in self.enclosing_tag)):
       self.last_description = ''.join(content).strip()
       self.emit(self.pop())
+    #SMOB: Start code to add the entry restrictions
+    #TODO Pavan: 1. The restrictions map key should be the item_id that is assigned 
+    #          in the first if. By default for SMOB the self.last_link is being taken
+    #          Hence for now it is the same.
+    #            2. Also the hub receives a set of sparql queries that has to be 
+    #          put into a set and then into the map<id, Set<query>>
+    elif (tag == 'access' or tag.endswith(':access')) and (
+        depth == 4 or (depth == 3 and 'rdf' in self.enclosing_tag)):
+      restriction = ''.join(content).strip()
+      self.entries_restrictions_map[self.last_link] = ''.join(content).strip()
+      self.emit(self.pop())
+    #SMOB: End code
     else:
       self.emit(self.pop())
 

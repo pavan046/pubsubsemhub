@@ -18,9 +18,9 @@ class VirtuosoConnect:
     def select(self, query):
     	sparql = SPARQLWrapper("http://localhost:8890/sparql")
     	sparql.setQuery(query)
-	logging.info('Query: %r', query)
+	logging.debug('Query: %r', query)
     	uris = self.returnJson(sparql)
-	logging.info('uris: %r', uris)
+	logging.debug('uris: %r', uris)
 	return uris
     	
     """This function takes in a insert statment and returns 
@@ -41,5 +41,5 @@ class VirtuosoConnect:
     	wrapper.setReturnFormat(JSON)
     	results = wrapper.query().convert()
     	for result in results["results"]["bindings"]:
-    		uris.append(result["s"]["value"])
+    		uris.append(result["callback"]["value"])
     	return uris
