@@ -224,12 +224,22 @@ class RssFeedHandler(FeedContentHandler):
     #          Hence for now it is the same.
     #            2. Also the hub receives a set of sparql queries that has to be 
     #          put into a set and then into the map<id, Set<query>>
-    elif (tag == 'access' or tag.endswith(':access')) and (
-        depth == 4 or (depth == 3 and 'rdf' in self.enclosing_tag)):
+    elif (tag == 'space' or tag.endswith(':space')) and (
+        depth == 5 or (depth == 4 and 'rdf' in self.enclosing_tag)):
       restriction = ''.join(content).strip()
-      logging.info('Restriction: %r', restriction)
-      self.entries_restrictions_map[self.last_link] = ''.join(content).strip()
+      access_queries = []
+      for link, queries in self.entries_restrictions_map.iteritems():
+        if(link == self.last_link):
+            access_queries = queries
+      access_queries.append(restriction);
+      self.entries_restrictions_map[self.last_link] = access_queries
       self.emit(self.pop())
+    #elif (tag == 'access' or tag.endswith(':access')) and (
+    #    depth == 4 or (depth == 3 and 'rdf' in self.enclosing_tag)):
+    #  restriction = ''.join(content).strip()
+    #  logging.info('Restriction: %r', restriction)
+    #  self.entries_restrictions_map[self.last_link] = ''.join(content).strip()
+    #  self.emit(self.pop())'''
     #SMOB: End code
     else:
       self.emit(self.pop())

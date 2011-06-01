@@ -1583,17 +1583,15 @@ class EventToDeliver(db.Expando):
       revised_subscribers = []
       for restriction in self.access_restrictions:
         restriction = unicode(BeautifulStoneSoup(restriction, convertEntities=BeautifulStoneSoup.ALL_ENTITIES))
-        logging.info('Restriction: %r', restriction)
         #The object can be instantiated only once to connect and multiple inserts can be done
         #SMOB: This is the place to change code for getting the sparql queries
         connect=sparql_connect.VirtuosoConnect()
-        callback_uris = connect.select(restriction)
+        logging.info('Restriction: %r', restriction)
+        callback_uris.extend(connect.select(restriction))
         logging.debug('Callbacks from SPARQL: %r', callback_uris)
       
       for subscriber in all_subscribers:
         for sparql_callback in callback_uris:
-          logging.debug('sparql callback: %r', sparql_callback)
-          logging.debug('subscriber callback: %r', subscriber.callback)
           if str(subscriber.callback)==str(sparql_callback):
               revised_subscribers.append(subscriber)
       all_subscribers=revised_subscribers
@@ -2452,7 +2450,7 @@ def find_feed_updates(topic, format, feed_content,
     logging.debug('content: %r', new_content)
     entry_payloads.append(new_content)
     #SMOB: Start code to get the updated entry restrictions
-    entry_restrictions.append(restrictions_map[entry_id])
+    entry_restrictions.extend(restrictions_map[entry_id])
     #SMOB: End code
     entities_to_save.append(FeedEntryRecord.create_entry_for_topic(
         topic, entry_id, new_content_hash))
