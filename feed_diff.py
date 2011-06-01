@@ -227,6 +227,7 @@ class RssFeedHandler(FeedContentHandler):
     elif (tag == 'access' or tag.endswith(':access')) and (
         depth == 4 or (depth == 3 and 'rdf' in self.enclosing_tag)):
       restriction = ''.join(content).strip()
+      logging.info('Restriction: %r', restriction)
       self.entries_restrictions_map[self.last_link] = ''.join(content).strip()
       self.emit(self.pop())
     #SMOB: End code
