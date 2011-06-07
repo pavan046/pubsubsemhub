@@ -102,6 +102,7 @@ import xml.sax
 #SMOB: Start import libraries
 import sparql_connect
 from BeautifulSoup import BeautifulStoneSoup
+from sets import Set
 #SMOB: End
 
 from google.appengine import runtime
@@ -1577,8 +1578,9 @@ class EventToDeliver(db.Expando):
               relevant one '''
     
       #SMOB: Start code to execute the SPARQL Queries and get the call back URLs
-      #variable to hold the call back URIs resulting from the sparql query 
-      callback_uris = []
+      #A set to hold the call back URIs. Possibily of two call_back URIs received
+      #by two SPARQL queries
+      callback_uris = Set()
       #variable to hold the matched subscribers
       revised_subscribers = []
       for restriction in self.access_restrictions:
@@ -1587,13 +1589,14 @@ class EventToDeliver(db.Expando):
         #SMOB: This is the place to change code for getting the sparql queries
         connect=sparql_connect.VirtuosoConnect()
         logging.info('Restriction: %r', restriction)
-        callback_uris.extend(connect.select(restriction))
+        callback_uris.update(set(connect.select(restriction)))
         logging.debug('Callbacks from SPARQL: %r', callback_uris)
       
       for subscriber in all_subscribers:
         for sparql_callback in callback_uris:
           if str(subscriber.callback)==str(sparql_callback):
               revised_subscribers.append(subscriber)
+              
       all_subscribers=revised_subscribers
       logging.info('Number of subscribers: %r', len(all_subscribers))
       #SMOB: End code
@@ -2530,21 +2533,6 @@ def inform_event(event_to_deliver, alternate_topics):
   """
   pass
 
-#SMOB: Start code to extract the queries from the content 
-def extract_restrictions(feed_content, format):
-  """Extracts the sparql queries for each of the entry_id and pushes it into the MAP.
-
-  
-  Args:
-    feed_content:  Content of the feed from which the queries are extracted
-    format: format of the content rss/atom
-  Returns: The queries in the content is extracted and the returned without the queries  
-  """
-  content = feed_content.replace('pavan', '')
-  return content
-  
-#SMOB: End code
-
 def parse_feed(feed_record,
                headers,
                content,
@@ -2580,11 +2568,6 @@ def parse_feed(feed_record,
     order = (RSS, ATOM, ARBITRARY)
   else:
     order = (ATOM, RSS, ARBITRARY)
-  #SMOB: Start code to extract queries
-  #TODO: This is not required because the restrictions are 
-  #      extracted at the time of finding the feed difference.
-  content = extract_restrictions(content, 'atom')
-  #SMOB: End code
         
   parse_failures = 0
   for format in order:
