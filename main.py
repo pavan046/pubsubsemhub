@@ -132,7 +132,7 @@ async_proxy = async_apiproxy.AsyncAPIProxy()
 ################################################################################
 # Config parameters
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
   logging.getLogger().setLevel(logging.DEBUG)
@@ -1576,7 +1576,12 @@ class EventToDeliver(db.Expando):
               we might have to refer the FOAF profiles using the callback URL. Once we get all the
               call back urls we compare it with all_subscribers subscription objects to get the 
               relevant one '''
-    
+      
+      #VIDEO: SMOB Video 
+      logging.info('-------Total Number of subscribers: %r', len(all_subscribers))
+      for subscriber in all_subscribers:
+        logging.info('--Subscriber: %r', subscriber.callback)
+        logging.info('--------------')
       #SMOB: Start code to execute the SPARQL Queries and get the call back URLs
       #A set to hold the call back URIs. Possibily of two call_back URIs received
       #by two SPARQL queries
@@ -1588,7 +1593,7 @@ class EventToDeliver(db.Expando):
         #The object can be instantiated only once to connect and multiple inserts can be done
         #SMOB: This is the place to change code for getting the sparql queries
         connect=sparql_connect.VirtuosoConnect()
-        logging.info('Restriction: %r', restriction)
+        logging.info('Access Space: %r', restriction)
         callback_uris.update(set(connect.select(restriction)))
         logging.debug('Callbacks from SPARQL: %r', callback_uris)
       
@@ -1598,7 +1603,11 @@ class EventToDeliver(db.Expando):
               revised_subscribers.append(subscriber)
               
       all_subscribers=revised_subscribers
-      logging.info('Number of subscribers: %r', len(all_subscribers))
+      #VIDEO: SMOB Video 
+      logging.info('-------Total Number of subscribers with access: %r', len(all_subscribers))
+      for subscriber in all_subscribers:
+        logging.info('--Subscriber: %r', subscriber.callback)
+        logging.info('--------------')
       #SMOB: End code
         
       more_subscribers = len(all_subscribers) > chunk_size

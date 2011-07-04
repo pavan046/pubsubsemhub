@@ -3,7 +3,7 @@
 import logging
 from SPARQLWrapper import SPARQLWrapper, JSON, XML, N3, RDF
 
-DEBUG = True
+DEBUG = False
 
 """This class is built on the sparql wrapper which queries a sparql endpoint
    The returned results are then parsed based on the content type returned """
@@ -16,6 +16,11 @@ class VirtuosoConnect:
     """This function executes a select sparql query and returns a wrapper object
     The wrapper object can later be converted to get any format of result needed"""
     def select(self, query):
+        prefix = """PREFIX sioc: <http://rdfs.org/sioc/ns#>
+                    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+                    PREFIX push: <http://push.deri.ie/smob/> 
+                 """
+        query = prefix + query        
     	sparql = SPARQLWrapper("http://localhost:8890/sparql")
     	sparql.setQuery(query)
 	logging.debug('Query: %r', query)
