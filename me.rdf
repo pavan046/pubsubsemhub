@@ -1,0 +1,28 @@
+
+<!-- Processed by Id: cwm.py,v 1.197 2007/12/13 15:38:39 syosi Exp -->
+<!--     using base file:///Users/hjs/Documents/card/card.n3-->
+
+
+<rdf:RDF xmlns="http://xmlns.com/foaf/0.1/"
+    xmlns:cert="http://www.w3.org/ns/auth/cert#"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+    xmlns:rsa="http://www.w3.org/ns/auth/rsa#">
+
+
+    <PersonalProfileDocument rdf:about="http://localhost:8080/me">
+        <primaryTopic rdf:resource="http://localhost:8080/me"/>
+        <title>Semantic Hub identity</title>
+    </PersonalProfileDocument>
+
+
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/ns/auth/rsa#RSAPublicKey"/>
+        <cert:identity rdf:resource="http://localhost:8080/me"/>
+        <rsa:modulus rdf:datatype="http://www.w3.org/ns/auth/cert#hex">
+B11965C3707949F1713152F118D36FF0CB9B4636FB73C41E14A436BF62BAA2781E67D21F18C7490A8C8DA80825E5C8CBB0FAA02ED53CAED529CDE2180D75CD5B783244D608593FD7C55999F838C709C646D4E7222FC88A9D72D630F15CCCF08E5B08C8168C3803C823F7F8C0ED5C7FE7B6EA886A9826A1235C49A33EB2604F23
+        </rsa:modulus>
+        <rsa:public_exponent rdf:datatype="http://www.w3.org/ns/auth/cert#decimal">65537</rsa:public_exponent>
+    </rdf:Description>
+</rdf:RDF>

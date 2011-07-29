@@ -1,0 +1,31 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN" "http://www.w3.org/MarkUp/DTD/xhtml-rdfa-1.dtd">
+<html
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:cert="http://www.w3.org/ns/auth/cert#"
+      xmlns:foaf="http://xmlns.com/foaf/0.1/"
+      xmlns:owl="http://www.w3.org/2002/07/owl#"
+      xmlns:rsa="http://www.w3.org/ns/auth/rsa#"
+      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<head>
+<meta http-equiv="CONTENT-TYPE" content="text/html; charset=utf-8" />
+<title>Semantic Hub identity</title>
+</head>
+<body typeof="foaf:PersonalProfileDocument" about="">
+<p>I'm the semantic hub</p>
+<div rel="foaf:primaryTopic" href="http://localhost:8080/me"/>
+
+<div about="#cert" typeof="rsa:RSAPublicKey">
+  <div href="http://localhost:8080/me" rel="cert:identity"></div>
+  <div property="rsa:modulus" datatype="cert:hex" content="B11965C3707949F1713152F118D36FF0CB9B4636FB73C41E14A436BF62BAA2781E67D21F18C7490A8C8DA80825E5C8CBB0FAA02ED53CAED529CDE2180D75CD5B783244D608593FD7C55999F838C709C646D4E7222FC88A9D72D630F15CCCF08E5B08C8168C3803C823F7F8C0ED5C7FE7B6EA886A9826A1235C49A33EB2604F23"></div>
+  <div property="rsa:public_exponent" datatype="cert:int" content="65537"></div>
+  <div about="http://localhost:8080/me"></div>
+</div>
+<p about=""
+     resource="http://www.w3.org/TR/rdfa-syntax"
+     rel="dc:conformsTo" xmlns:dc="http://purl.org/dc/terms/">
+    <a href="http://validator.w3.org/check?uri=referer"><img
+        src="http://www.w3.org/Icons/valid-xhtml-rdfa"
+        alt="Valid XHTML + RDFa" height="31" width="88" /></a>
+  </p>
+</body>
+</html>
