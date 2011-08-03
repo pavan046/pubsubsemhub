@@ -1,0 +1,14 @@
+Metadata-Version: 1.0
+Name: rdfextras
+Version: 0.1
+Summary: RDFExtras provide tools, extra stores and such for RDFLib.
+Home-page: http://code.google.com/p/rdfextras/
+Author: Niklas Lindström
+Author-email: lindstream@gmail.com
+License: BSD
+Description: UNKNOWN
+Platform: any
+Classifier: Programming Language :: Python
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Operating System :: OS Independent

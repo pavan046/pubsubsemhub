@@ -1,0 +1,6 @@
+[nose.plugins]
+EARLPlugin = rdfextras.tools.EARLPlugin:EARLPlugin
+
+[console_scripts]
+rdfpipe = rdfextras.tools.rdfpipe:main
+
