@@ -101,8 +101,11 @@ import wsgiref.handlers
 import xml.sax
 #SMOB: Start import libraries
 import sparql_connect
+import read_foaf
 from BeautifulSoup import BeautifulStoneSoup
 from sets import Set
+reader = read_foaf.ReadFOAF()
+connect=sparql_connect.VirtuosoConnect()
 #SMOB: End
 
 from google.appengine import runtime
@@ -129,6 +132,7 @@ import mapreduce.model
 
 async_proxy = async_apiproxy.AsyncAPIProxy()
 
+                          
 ################################################################################
 # Config parameters
 
@@ -800,8 +804,11 @@ class Subscription(db.Model):
       sub.put()
       #SMOB: Start Code == to connect and insert few details of the subscriber
       #The object can be instantiated only once to connect and multiple inserts can be done
-      connect=sparql_connect.VirtuosoConnect()
-      connect.insert(foaf)
+      #Parse the FOAF and obtain triples including the PUsH vocab triples
+      triples = reader.parsefoaf(foaf, False, topic, callback)
+      #Add the triples to the triple store
+      connect.insertTriples(triples)
+      #connect.insert(foaf)
       #SMOB: END code
       return sub_is_new
     return db.run_in_transaction(txn)
@@ -1578,10 +1585,10 @@ class EventToDeliver(db.Expando):
               relevant one '''
       
       #VIDEO: SMOB Video 
-      logging.info('-------Total Number of subscribers: %r', len(all_subscribers))
-      for subscriber in all_subscribers:
-        logging.info('--Subscriber: %r', subscriber.callback)
-        logging.info('--------------')
+      #logging.info('-------Total Number of subscribers: %r', len(all_subscribers))
+      #for subscriber in all_subscribers:
+        #logging.info('--Subscriber: %r', subscriber.callback)
+        #logging.info('--------------')
       #SMOB: Start code to execute the SPARQL Queries and get the call back URLs
       #A set to hold the call back URIs. Possibily of two call_back URIs received
       #by two SPARQL queries
@@ -1592,8 +1599,7 @@ class EventToDeliver(db.Expando):
         restriction = unicode(BeautifulStoneSoup(restriction, convertEntities=BeautifulStoneSoup.ALL_ENTITIES))
         #The object can be instantiated only once to connect and multiple inserts can be done
         #SMOB: This is the place to change code for getting the sparql queries
-        connect=sparql_connect.VirtuosoConnect()
-        logging.info('Access Space: %r', restriction)
+        logging.debug('Access Space: %r', restriction)
         callback_uris.update(set(connect.select(restriction)))
         logging.debug('Callbacks from SPARQL: %r', callback_uris)
       
@@ -1604,10 +1610,10 @@ class EventToDeliver(db.Expando):
               
       all_subscribers=revised_subscribers
       #VIDEO: SMOB Video 
-      logging.info('-------Total Number of subscribers with access: %r', len(all_subscribers))
-      for subscriber in all_subscribers:
-        logging.info('--Subscriber: %r', subscriber.callback)
-        logging.info('--------------')
+      #logging.info('-------Total Number of subscribers with access: %r', len(all_subscribers))
+      #for subscriber in all_subscribers:
+        #logging.info('--Subscriber: %r', subscriber.callback)
+        #logging.info('--------------')
       #SMOB: End code
         
       more_subscribers = len(all_subscribers) > chunk_size
@@ -2082,6 +2088,7 @@ class SubscribeHandler(webapp.RequestHandler):
     callback = self.request.get('hub.callback', '')
     topic = self.request.get('hub.topic', '')
     #SMOB: Start code to get the foaf profile of subscriber
+    # TODO: Need to add checks whether the foaf URL is present and valid
     foaf = self.request.get('hub.foaf', '')
     #SMOB: End code
     verify_type_list = [s.lower() for s in self.request.get_all('hub.verify')]
@@ -2105,6 +2112,14 @@ class SubscribeHandler(webapp.RequestHandler):
                        'optional port %s' % ','.join(VALID_PORTS))
     else:
       topic = normalize_iri(topic)
+    
+    if not topic or not is_valid_url(foaf):
+      error_message = ('Invalid parameter: hub.foaf; '
+                       'must be valid URI with no fragment and '
+                       'optional port %s' % ','.join(VALID_PORTS))
+    else:
+      foaf = normalize_iri(foaf)
+
 
     enabled_types = [vt for vt in verify_type_list if vt in ('async', 'sync')]
     if not enabled_types:
@@ -2334,6 +2349,7 @@ class PublishHandlerBase(webapp.RequestHandler):
 
     # Only insert FeedToFetch entities for feeds that are known to have
     # subscribers. The rest will be ignored.
+    
     topic_map = KnownFeedIdentity.derive_additional_topics(urls)
     if not topic_map:
       urls = set()
@@ -2384,6 +2400,41 @@ class PublishHandler(PublishHandlerBase):
       self.response.set_status(400)
       self.response.out.write('MUST supply at least one hub.url parameter')
       return
+  
+    # SMOB: Start code to add the publishers foaf profile into the RDF store
+    # Maintain a hash Map with publisher and the topic here. Check if the publisher is already 
+    # added to the RDF store for the topic. If not, add to the RDF store else just publish.
+    foaf = self.request.get('hub.foaf', '')
+    existing_urls = KnownFeed.check_exists(urls)
+    logging.info('publishing list: %s', existing_urls)
+    if len(urls) == len(existing_urls):
+        logging.info('Already present in the publishing list: %s', urls)
+    else:
+        if len(existing_urls) == 0:
+            if not foaf:
+                    self.response.set_status(400)
+                    self.response.out.write('MUST supply foaf profile location of publisher once for every topic published')
+                    return
+            for url in urls:
+                triples = reader.parsefoaf(foaf, True, url, '')
+                #Add the triples to the triple store
+                connect.insertTriples(triples)
+        else:    
+            for existing_url in existing_urls:
+                present = False
+                for url in urls:
+                    if url == existing_url:
+                        present = True
+                if present == False:
+                    logging.info('Not present in the publishing list: %s', url)
+                    if not foaf:
+                        self.response.set_status(400)
+                        self.response.out.write('MUST supply foaf profile location of publisher once for every topic published')
+                        return
+                    triples = reader.parsefoaf(foaf, True, existing_url, '')
+                    #Add the triples to the triple store
+                    connect.insertTriples(triples)
+    #SMOB: End code
 
     logging.debug('Publish event for %d URLs: %s', len(urls), urls)
     error = self.receive_publish(urls, 204, 'hub.url')
@@ -2443,6 +2494,7 @@ def find_feed_updates(topic, format, feed_content,
   entities_to_save = []
   entry_payloads = []
   #SMOB: Start code to get the updated entry restrictions
+  updated_entries_map = {}
   '''SMOB: I maintain the Map rather than an array since the posts should be accessed using the id
           when the subscriptions are to be sent.'''
   entry_restrictions = []
@@ -2461,14 +2513,18 @@ def find_feed_updates(topic, format, feed_content,
     logging.debug('Entry-Id: %r', entry_id)
     logging.debug('content: %r', new_content)
     entry_payloads.append(new_content)
+    updated_entries_map[entry_id] = new_content
     #SMOB: Start code to get the updated entry restrictions
-    entry_restrictions.extend(restrictions_map[entry_id])
-    #SMOB: End code
+    for key, value in restrictions_map.iteritems():
+        logging.debug('key: %r', key)
+         
+    #entry_restrictions.extend(restrictions_map[entry_id])
     entities_to_save.append(FeedEntryRecord.create_entry_for_topic(
         topic, entry_id, new_content_hash))
-
-  return header_footer, entities_to_save, entry_payloads, entry_restrictions
-
+  # Changes the entry_payloads to entries_map and will be changed lagter  
+  return header_footer, entities_to_save, entry_payloads, restrictions_map, updated_entries_map
+  #SMOB: End code
+    
 
 def pull_feed(feed_to_fetch, fetch_url, headers):
   """Pulls a feed.
@@ -2577,7 +2633,7 @@ def parse_feed(feed_record,
     order = (RSS, ATOM, ARBITRARY)
   else:
     order = (ATOM, RSS, ARBITRARY)
-        
+  event_to_deliver_list = []      
   parse_failures = 0
   for format in order:
     # Parse the feed. If this fails we will give up immediately.
@@ -2585,9 +2641,10 @@ def parse_feed(feed_record,
       #SMOB: Start code, added the entry_restrictions which will contain the list of queries for each entry
       '''header_footer, entities_to_save, entry_payloads = find_feed_updates(
           feed_record.topic, format, content)'''
-      header_footer, entities_to_save, entry_payloads, entry_restrictions = find_feed_updates(
+      header_footer, entities_to_save, entry_payloads, restrictions_map, entries_map = find_feed_updates(
           feed_record.topic, format, content)
-      logging.debug('Entry restrictions: %r', entry_restrictions)
+      logging.debug('Entry restrictions: %r', restrictions_map)
+      logging.info('pay: %r    map: %r', len(entry_payloads), len(entries_map))
       #SMOB: End code
       break
     except (xml.sax.SAXException, feed_diff.Error), e:
@@ -2626,7 +2683,9 @@ def parse_feed(feed_record,
 
   if format != ARBITRARY and not entities_to_save:
     logging.debug('No new entries found')
+    #Changing this to a list of events to deliver
     event_to_deliver = None
+    event_to_deliver_list = []
   else:
     logging.info(
         'Saving %d new/updated entries for content '
@@ -2640,11 +2699,16 @@ def parse_feed(feed_record,
     event_to_deliver = EventToDeliver.create_event_for_topic(
         feed_record.topic, format, feed_record.content_type,
         header_footer, entry_payloads )''' 
-    event_to_deliver = EventToDeliver.create_event_for_topic(
-        feed_record.topic, format, feed_record.content_type,
-        header_footer, entry_payloads, entry_restrictions)
-    entities_to_save.insert(0, event_to_deliver)
-    #SMOB: End code
+    for entry_id, content in entries_map.iteritems():
+        payload = []
+        payload.append(content)
+        event_to_deliver = EventToDeliver.create_event_for_topic(
+            feed_record.topic, format, feed_record.content_type,
+            header_footer, payload, restrictions_map[entry_id])
+        logging.info("Adding event for entry_id: %r", entry_id)
+        entities_to_save.insert(0, event_to_deliver)
+        event_to_deliver_list.append(event_to_deliver)
+        #SMOB: End code
 
   entities_to_save.insert(0, feed_record)
 
@@ -2675,9 +2739,11 @@ def parse_feed(feed_record,
         all_entities.insert(0, group[len(group)/2:])
         all_entities.insert(0, group[:len(group)/2])
         raise
-    if event_to_deliver:
-      event_to_deliver.enqueue()
-
+    #SMOB: Start code to enqueue multiple events.
+    #if event_to_deliver:
+      #event_to_deliver.enqueue()
+    for event in event_to_deliver_list:
+      event.enqueue()
   try:
     for i in xrange(PUT_SPLITTING_ATTEMPTS):
       try:
@@ -2868,6 +2934,7 @@ class PushEventHandler(webapp.RequestHandler):
       return
 
     # Retrieve the first N + 1 subscribers; note if we have more to contact.
+    # SMOB: Start If different events dont work then the code should be shifted here
     more_subscribers, subscription_list = work.get_next_subscribers()
     logging.info('%d more subscribers to contact for: '
                  'topic = %s, delivery_mode = %s',

@@ -1,140 +1,0 @@
-10
-
-dir
-0
-http://knoesis-svn.cs.wright.edu/svn/pavan/pubsubhubbub/trunk/pshb-example/pubsubhubbub/hub/virtuoso_connect/SPARQLWrapper
-http://knoesis-svn.cs.wright.edu/svn/pavan
-add
-
-
-
-
-
-
-
-svn:special svn:externals svn:needs-lock
-
-
-
-
-
-
-
-
-
-
-
-8661c0b3-8f0a-4391-bfa0-cfeaea3dbe21
-
-AUTHORS.txt
-file
-
-
-
-add
-
-ChangeLog.txt
-file
-
-
-
-add
-
-LICENSE.txt
-file
-
-
-
-add
-
-MANIFEST.in
-file
-
-
-
-add
-
-PKG-INFO
-file
-
-
-
-add
-
-README.txt
-file
-
-
-
-add
-
-SPARQLWrapper
-dir
-
-
-
-add
-
-SPARQLWrapper.egg-info
-dir
-
-
-
-add
-
-build
-dir
-
-
-
-add
-
-ez_setup.py
-file
-
-
-
-add
-
-scripts
-dir
-
-
-
-add
-
-setup.cfg
-file
-
-
-
-add
-
-setup.py
-file
-
-
-
-add
-
-
-
-
-
-has-props
-has-prop-mods
-
-setuptools-0.6c11-py2.6.egg
-file
-
-
-
-add
-
-
-
-
-
-has-props
-has-prop-mods
-

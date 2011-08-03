@@ -73,8 +73,10 @@ class ReadFOAF:
         # Check whether the foaf of the person is already present in the rdf store.
         # To speed up the execution we can keep a cache of the person_URIs whose foaf profiles 
         # are present.
+        logging.info("Checking whether foaf: %s is already present in the RDF store", person_URI)
         if self.triple_store.foaf_exists(person_URI):
             store = Graph()
+            logging.info("foaf: %s is already present in the RDF store", person_URI)
         # Add the rest of the required triples to the graph
         store = self.addTriples(store, person_URI, pub, topic, callback)
         # Transform the graph to triples 
@@ -94,11 +96,12 @@ class ReadFOAF:
         smobAccount = uri+"-smob"
         graph.add((URIRef(uri), FOAF["holdsAccount"], URIRef(smobAccount)))
         if pub:
-			graph.add((URIRef(topic), PUSH["has_owner"], URIRef(smobAccount)))
+            graph.add((URIRef(topic), PUSH["has_owner"], URIRef(smobAccount)))
+            logging.info("Adding triples to Publisher %s", uri)
         else:
             graph.add((URIRef(uri), PUSH["has_callback"], URIRef(callback)))
             graph.add((URIRef(topic), PUSH["has_subscriber"], URIRef(smobAccount)))
-            
+            logging.info("Adding triples to Subscriber %s", uri)
         return graph
 
 		#store.serialize("foaf.rdf", format="pretty-xml", max_depth=3)
@@ -109,6 +112,7 @@ class ReadFOAF:
         @param graph:the graph which has to be converted to tuples
         Returns array of triples which can be Inserted via a sparql endpoint
         """
+        logging.info("Transforming the graph with PUSH triples for %s", location)
         triples = []
         for s, o, p in graph:
             triple = []
