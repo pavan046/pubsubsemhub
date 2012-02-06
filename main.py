@@ -136,7 +136,7 @@ async_proxy = async_apiproxy.AsyncAPIProxy()
 ################################################################################
 # Config parameters
 
-DEBUG = False
+DEBUG = True
 
 if DEBUG:
   logging.getLogger().setLevel(logging.DEBUG)
@@ -805,6 +805,7 @@ class Subscription(db.Model):
       #SMOB: Start Code == to connect and insert few details of the subscriber
       #The object can be instantiated only once to connect and multiple inserts can be done
       #Parse the FOAF and obtain triples including the PUsH vocab triples
+      logging.info('Is it a problem here??')
       triples = reader.parsefoaf(foaf, False, topic, callback)
       #Add the triples to the triple store
       connect.insertTriples(triples)
@@ -1599,9 +1600,9 @@ class EventToDeliver(db.Expando):
         restriction = unicode(BeautifulStoneSoup(restriction, convertEntities=BeautifulStoneSoup.ALL_ENTITIES))
         #The object can be instantiated only once to connect and multiple inserts can be done
         #SMOB: This is the place to change code for getting the sparql queries
-        logging.debug('Access Space: %r', restriction)
+        logging.info('Access Space: %r', restriction)
         callback_uris.update(set(connect.select(restriction)))
-        logging.debug('Callbacks from SPARQL: %r', callback_uris)
+        logging.info('Callbacks from SPARQL: %r', callback_uris)
       
       for subscriber in all_subscribers:
         for sparql_callback in callback_uris:
@@ -2390,12 +2391,14 @@ class PublishHandler(PublishHandlerBase):
     self.response.headers['Content-Type'] = 'text/plain'
 
     mode = self.request.get('hub.mode')
+    logging.info('hub mode %s', mode)
     if mode.lower() != 'publish':
       self.response.set_status(400)
       self.response.out.write('hub.mode MUST be "publish"')
       return
 
     urls = set(self.request.get_all('hub.url'))
+    logging.info('hub url %s', urls)
     if not urls:
       self.response.set_status(400)
       self.response.out.write('MUST supply at least one hub.url parameter')
@@ -2404,7 +2407,9 @@ class PublishHandler(PublishHandlerBase):
     # SMOB: Start code to add the publishers foaf profile into the RDF store
     # Maintain a hash Map with publisher and the topic here. Check if the publisher is already 
     # added to the RDF store for the topic. If not, add to the RDF store else just publish.
+    '''
     foaf = self.request.get('hub.foaf', '')
+    logging.info('hub foaf %s', foaf)
     existing_urls = KnownFeed.check_exists(urls)
     logging.info('publishing list: %s', existing_urls)
     if len(urls) == len(existing_urls):
@@ -2435,7 +2440,8 @@ class PublishHandler(PublishHandlerBase):
                     #Add the triples to the triple store
                     connect.insertTriples(triples)
     #SMOB: End code
-
+    '''
+    
     logging.debug('Publish event for %d URLs: %s', len(urls), urls)
     error = self.receive_publish(urls, 204, 'hub.url')
     if error:
@@ -2468,14 +2474,14 @@ def find_feed_updates(topic, format, feed_content,
     xml.sax.SAXException if there is a parse error.
     feed_diff.Error if the feed could not be diffed for any other reason.
   """
+  #SMOB: Start code
   if format == ARBITRARY:
-    return (feed_content, [], [])
+    return (feed_content, [], [], {}, {})
   #SMOB: Collect the latest content changed so that the SPARQL Queries can be checked
   '''header_footer, entries_map = filter_feed(feed_content, format)'''
-  #SMOB: Start code
   header_footer, entries_map, restrictions_map = filter_feed(feed_content, format)
   restriction_keys = restrictions_map.keys()
-  #SMOB: End code
+   #SMOB: End code
   # Find the new entries we've never seen before, and any entries that we
   # knew about that have been updated.
   STEP = MAX_FEED_ENTRY_RECORD_LOOKUPS
@@ -2699,13 +2705,14 @@ def parse_feed(feed_record,
     event_to_deliver = EventToDeliver.create_event_for_topic(
         feed_record.topic, format, feed_record.content_type,
         header_footer, entry_payloads )''' 
+    logging.debug('Checking for restrictions: %s', restrictions_map)
     for entry_id, content in entries_map.iteritems():
         payload = []
         payload.append(content)
+        logging.info("Adding event for entry_id: %r", entry_id)
         event_to_deliver = EventToDeliver.create_event_for_topic(
             feed_record.topic, format, feed_record.content_type,
             header_footer, payload, restrictions_map[entry_id])
-        logging.info("Adding event for entry_id: %r", entry_id)
         entities_to_save.insert(0, event_to_deliver)
         event_to_deliver_list.append(event_to_deliver)
         #SMOB: End code
@@ -3173,6 +3180,7 @@ class RecordFeedHandler(webapp.RequestHandler):
     feed_id = None
     for feed_type in order:
       try:
+        logging.info('response content %s', response.content)
         feed_id = feed_identifier.identify(response.content, feed_type)
         if feed_id is not None:
           break
