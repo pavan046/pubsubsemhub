@@ -2114,6 +2114,11 @@ class SubscribeHandler(webapp.RequestHandler):
     else:
       topic = normalize_iri(topic)
     
+    ''' 
+    SMOB:Checking for FOAF will be an option only if this hub is used for SMOB
+    Twarql: If this is used for personalized Twarql then the foaf will be generated automatically by the Profile Generator
+    Inturn I would start modifying the code as Twarql code modification    
+    '''
     if not topic or not is_valid_url(foaf):
       error_message = ('Invalid parameter: hub.foaf; '
                        'must be valid URI with no fragment and '
