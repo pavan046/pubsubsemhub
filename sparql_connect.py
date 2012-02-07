@@ -11,7 +11,7 @@ DEBUG = False
 class VirtuosoConnect:
     """This class is built on the sparql wrapper which queries a sparql endpoint
    The returned results are then parsed based on the content type returned 
-   TODO: 1. The graph should be initialized onlu once since we will be workin
+   TODO: 1. The graph should be initialized only once since we will be workin
             on a single graph
          2. Make this a singleton class with all the initializations done once
             """
@@ -26,7 +26,7 @@ class VirtuosoConnect:
                     PREFIX category: <http://dbpedia.org/resource/Category:>
                  """
         query = prefix + query        
-    	sparql = SPARQLWrapper("http://localhost:8890/sparql")
+    	sparql = SPARQLWrapper("http://knoesis-twit.cs.wright.edu:8890/sparql")
     	sparql.setQuery(query)
         logging.debug('Query: %r', query)
     	uris = self.returnJson(sparql, "callback")
@@ -37,7 +37,7 @@ class VirtuosoConnect:
         """This function checks if the foaf profile of the person already present or not
             TODO: This can be done in terms of ask query which returns the JSON format"""
         query = """SELECT COUNT(*) 
-               FROM <http://localhost:8890/DAV/home/smob>
+               FROM <http://knoesis-twit.cs.wright.edu/dav/dbpedia/categories>
                WHERE {
               <"""+ person_URI +"""> a foaf:Person .
               ?b foaf:primaryTopic <"""+ person_URI +"""> .
@@ -54,11 +54,11 @@ class VirtuosoConnect:
         """This function takes in a insert statment and returns 
         whether it was executed fine or not"""
      	print "Triples: "+insQuery
-    	sparql = SPARQLWrapper("http://localhost:8890/sparql")
+    	sparql = SPARQLWrapper("http://knoesis-twit.cs.wright.edu:8890/sparql")
         sparql.setQuery("""
            	PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         	INSERT DATA 
-        	INTO <http://localhost:8890/DAV/home/test>
+        	INTO <http://knoesis-twit.cs.wright.edu/dav/dbpedia/categories>
         	{ """+insQuery+"""}
     	""")
         results=sparql.query().convert()
